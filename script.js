@@ -29,34 +29,22 @@ if (loginForm) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || "Usuário ou senha inválidos");
-      }
-
-      if (!data.access_token) {
-        throw new Error("Token não retornado pela API");
+        throw new Error(JSON.stringify(data));
       }
 
       localStorage.setItem("token", data.access_token);
 
-      mensagem.textContent = "Login realizado com sucesso!";
+      mensagem.textContent = "Login OK!";
       mensagem.style.color = "green";
 
       setTimeout(() => {
         window.location.href = "dashboard.html";
       }, 800);
+
     } catch (error) {
-      console.error("Erro no login:", error);
-      mensagem.textContent = "Failed to fetch";
+      console.error("ERRO REAL:", error);
+      mensagem.textContent = "Erro de conexão com API";
       mensagem.style.color = "red";
     }
   });
-}
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "index.html";
 }
