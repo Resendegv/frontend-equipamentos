@@ -11,44 +11,36 @@ if (loginForm) {
     const senha = document.getElementById("senha").value.trim();
 
     mensagem.textContent = "Entrando...";
-    mensagem.className = "feedback";
 
     try {
+      const formData = new URLSearchParams();
+      formData.append("username", username);
+      formData.append("password", senha);
+
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: JSON.stringify({
-          username,
-          password: senha
-        })
+        body: formData
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || "Falha no login.");
+        throw new Error(data.detail || "Falha no login");
       }
 
-      const token = data.access_token || data.token;
+      localStorage.setItem("token", data.access_token);
 
-      if (!token) {
-        throw new Error("Token não retornado pela API.");
-      }
-
-      localStorage.setItem("token", token);
-
-      mensagem.textContent = "Login realizado com sucesso.";
-      mensagem.className = "feedback success";
+      mensagem.textContent = "Login realizado com sucesso";
 
       setTimeout(() => {
         window.location.href = "dashboard.html";
-      }, 400);
+      }, 500);
     } catch (error) {
-      console.error("Erro no login:", error);
-      mensagem.textContent = error.message;
-      mensagem.className = "feedback error";
+      console.error(error);
+      mensagem.textContent = error.message || "Erro ao conectar com a API";
     }
   });
 }
