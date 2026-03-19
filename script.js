@@ -14,15 +14,16 @@ if (loginForm) {
     mensagem.style.color = "black";
 
     try {
+      const body = new URLSearchParams();
+      body.append("username", username);
+      body.append("password", senha);
+
       const response = await fetch(`${API_URL}/auth/login-form`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          username: username,
-          password: senha,
-        }).toString(),
+        body: body.toString(),
       });
 
       const data = await response.json();
@@ -45,7 +46,7 @@ if (loginForm) {
       }, 800);
     } catch (error) {
       console.error("Erro no login:", error);
-      mensagem.textContent = error.message || "Erro ao conectar com a API";
+      mensagem.textContent = "Failed to fetch";
       mensagem.style.color = "red";
     }
   });
