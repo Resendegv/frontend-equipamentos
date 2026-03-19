@@ -17,13 +17,16 @@ if (loginForm) {
       formData.append("username", username);
       formData.append("password", senha);
 
-      const response = await fetch(`${API_URL}/auth/login-form`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: formData.toString()
-      });
+const response = await fetch(`${API_URL}/auth/login-form`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded"
+  },
+  body: new URLSearchParams({
+    username,
+    password: senha
+  }).toString()
+});
 
       const data = await response.json();
 
