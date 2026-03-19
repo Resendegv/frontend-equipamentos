@@ -1,7 +1,4 @@
-const API_URL =
-  window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
-    ? "https://api-equipamentos2.onrender.com"
-    : "https://SEU-BACKEND.onrender.com";
+const API_URL = "https://api-equipamentos2.onrender.com";
 
 let equipamentosBase = [];
 let manutencoesBase = [];
