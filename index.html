@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Sistema de Equipamentos</title>
+  <link rel="stylesheet" href="./app.css?v=10" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1>Login</h1>
+      <p class="muted">Acesse o sistema de controle de equipamentos</p>
+
+      <form id="loginForm" class="form-grid single">
+        <div class="form-group">
+          <label for="username">Usuário</label>
+          <input type="text" id="username" placeholder="Digite seu usuário" required />
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" placeholder="Digite sua senha" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary full">Entrar</button>
+      </form>
+
+      <p id="mensagem" class="feedback"></p>
+    </div>
+  </div>
+
+  <script src="./script.js?v=10"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="./app.css?v=10" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">FleetControl</div>
+
+      <nav class="nav">
+        <a class="nav-link active" href="./dashboard.html">Dashboard</a>
+        <a class="nav-link" href="./equipamentos.html">Equipamentos</a>
+        <a class="nav-link" href="./manutencoes.html">Manutenções</a>
+      </nav>
+
+      <button id="btnLogout" class="btn btn-danger full">Sair</button>
+    </aside>
+
+    <main class="content">
+      <header class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="muted">Painel de controle</p>
+        </div>
+      </header>
+
+      <section class="toolbar">
+        <div class="toolbar-item">
+          <label for="filtroStatusDashboard">Status</label>
+          <select id="filtroStatusDashboard">
+            <option value="">Todos</option>
+            <option value="operando">Operando</option>
+            <option value="em manutenção">Em manutenção</option>
+            <option value="parado">Parado</option>
+          </select>
+        </div>
+
+        <div class="toolbar-item grow">
+          <label for="buscaDashboard">Buscar</label>
+          <input type="text" id="buscaDashboard" placeholder="Buscar por nome, modelo ou fabricante" />
+        </div>
+
+        <div class="toolbar-actions">
+          <button id="btnAtualizarDashboard" class="btn btn-secondary">Atualizar</button>
+        </div>
+      </section>
+
+      <section class="cards-grid four">
+        <div class="card">
+          <span class="card-label">Total</span>
+          <strong id="totalEquipamentos" class="card-value">0</strong>
+        </div>
+
+        <div class="card">
+          <span class="card-label">Operando</span>
+          <strong id="totalOperando" class="card-value">0</strong>
+        </div>
+
+        <div class="card">
+          <span class="card-label">Manutenção</span>
+          <strong id="totalManutencao" class="card-value">0</strong>
+        </div>
+
+        <div class="card">
+          <span class="card-label">Parado</span>
+          <strong id="totalParado" class="card-value">0</strong>
+        </div>
+      </section>
+
+      <section class="cards-grid three">
+        <div class="card success-soft">
+          <span class="card-label">No prazo</span>
+          <strong id="totalNoPrazo" class="card-value">0</strong>
+        </div>
+
+        <div class="card warning-soft">
+          <span class="card-label">Vencendo</span>
+          <strong id="totalVencendo" class="card-value">0</strong>
+        </div>
+
+        <div class="card danger-soft">
+          <span class="card-label">Vencidas</span>
+          <strong id="totalVencidas" class="card-value">0</strong>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Alertas</h2>
+        </div>
+        <div id="listaAlertas" class="list-stack"></div>
+      </section>
+
+      <section class="grid-2">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Status</h2>
+          </div>
+          <div id="graficoStatus" class="chart-area"></div>
+          <div id="listaStatus" class="list-stack compact"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Tipos / Fabricantes</h2>
+          </div>
+          <div id="graficoTipos" class="chart-area"></div>
+          <div id="listaTipos" class="list-stack compact"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Manutenções críticas</h2>
+        </div>
+        <div id="listaManutencoesCriticas" class="list-stack"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Equipamentos filtrados</h2>
+        </div>
+        <div id="listaEquipamentos" class="list-stack"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./dashboard.js?v=10"></script>
+</body>
+</html>

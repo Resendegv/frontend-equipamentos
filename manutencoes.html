@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manutenções</title>
+  <link rel="stylesheet" href="./app.css?v=10" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">FleetControl</div>
+
+      <nav class="nav">
+        <a class="nav-link" href="./dashboard.html">Dashboard</a>
+        <a class="nav-link" href="./equipamentos.html">Equipamentos</a>
+        <a class="nav-link active" href="./manutencoes.html">Manutenções</a>
+      </nav>
+
+      <button id="btnLogout" class="btn btn-danger full">Sair</button>
+    </aside>
+
+    <main class="content">
+      <header class="page-header with-actions">
+        <div>
+          <h1>Manutenções</h1>
+          <p class="muted">Controle de manutenção e alertas</p>
+        </div>
+
+        <button id="btnNovaManutencao" class="btn btn-primary">Nova manutenção</button>
+      </header>
+
+      <section class="toolbar">
+        <div class="toolbar-item">
+          <label for="filtroStatusManutencao">Status</label>
+          <select id="filtroStatusManutencao">
+            <option value="">Todos</option>
+            <option value="pendente">Pendente</option>
+            <option value="agendada">Agendada</option>
+            <option value="concluída">Concluída</option>
+          </select>
+        </div>
+
+        <div class="toolbar-item">
+          <label for="filtroPrioridadeManutencao">Prioridade</label>
+          <select id="filtroPrioridadeManutencao">
+            <option value="">Todas</option>
+            <option value="baixa">Baixa</option>
+            <option value="média">Média</option>
+            <option value="alta">Alta</option>
+            <option value="crítica">Crítica</option>
+          </select>
+        </div>
+
+        <div class="toolbar-actions">
+          <button id="btnAtualizarManutencoes" class="btn btn-secondary">Atualizar</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Equipamento</th>
+                <th>Descrição</th>
+                <th>Prevista</th>
+                <th>Realizada</th>
+                <th>Status</th>
+                <th>Prioridade</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaManutencoes"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modalManutencao" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="tituloModalManutencao">Nova manutenção</h2>
+        <button id="btnFecharModalManutencao" class="btn-icon">×</button>
+      </div>
+
+      <form id="formManutencao" class="form-grid">
+        <input type="hidden" id="manutencaoId" />
+
+        <div class="form-group">
+          <label for="equipamento_id">Equipamento</label>
+          <select id="equipamento_id" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="descricao">Descrição</label>
+          <input type="text" id="descricao" required />
+        </div>
+
+        <div class="form-group">
+          <label for="data_prevista">Data prevista</label>
+          <input type="date" id="data_prevista" required />
+        </div>
+
+        <div class="form-group">
+          <label for="data_realizada">Data realizada</label>
+          <input type="date" id="data_realizada" />
+        </div>
+
+        <div class="form-group">
+          <label for="statusManutencao">Status</label>
+          <select id="statusManutencao" required>
+            <option value="pendente">Pendente</option>
+            <option value="agendada">Agendada</option>
+            <option value="concluída">Concluída</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="prioridade">Prioridade</label>
+          <select id="prioridade" required>
+            <option value="baixa">Baixa</option>
+            <option value="média">Média</option>
+            <option value="alta">Alta</option>
+            <option value="crítica">Crítica</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="btnCancelarManutencao" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="./manutencoes.js?v=10"></script>
+</body>
+</html>
