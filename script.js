@@ -17,12 +17,12 @@ if (loginForm) {
       formData.append("username", username);
       formData.append("password", senha);
 
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login-form`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: formData
+        body: formData.toString()
       });
 
       const data = await response.json();
@@ -39,7 +39,7 @@ if (loginForm) {
         window.location.href = "dashboard.html";
       }, 500);
     } catch (error) {
-      console.error(error);
+      console.error("Erro no login:", error);
       mensagem.textContent = error.message || "Erro ao conectar com a API";
     }
   });
