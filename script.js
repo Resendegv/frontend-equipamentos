@@ -13,6 +13,9 @@ if (loginForm) {
     mensagem.textContent = "Entrando...";
     mensagem.style.color = "black";
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
     try {
       const body = new URLSearchParams();
       body.append("username", username);
@@ -24,21 +27,22 @@ if (loginForm) {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: body.toString(),
+        signal: controller.signal,
       });
 
-      const raw = await response.text();
+      clearTimeout(timeout);
+
+      const text = await response.text();
       let data = {};
 
       try {
-        data = raw ? JSON.parse(raw) : {};
+        data = text ? JSON.parse(text) : {};
       } catch {
-        data = { raw };
+        data = { raw: text };
       }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP ${response.status} - ${data.detail || data.raw || "Erro no login"}`
-        );
+        throw new Error(data.detail || `HTTP ${response.status}`);
       }
 
       if (!data.access_token) {
@@ -51,12 +55,19 @@ if (loginForm) {
       mensagem.style.color = "green";
 
       setTimeout(() => {
-        window.location.href = "dashboard.html";
-      }, 800);
+        window.location.href = "./dashboard.html";
+      }, 500);
     } catch (error) {
-      console.error("ERRO REAL DO LOGIN:", error);
-      mensagem.textContent = error.message || "Erro ao conectar com a API";
+      clearTimeout(timeout);
+
+      if (error.name === "AbortError") {
+        mensagem.textContent = "A API demorou para responder. Tente novamente em alguns segundos.";
+      } else {
+        mensagem.textContent = error.message || "Erro ao conectar com a API";
+      }
+
       mensagem.style.color = "red";
+      console.error("ERRO LOGIN:", error);
     }
   });
 }
@@ -67,5 +78,5 @@ function getToken() {
 
 function logout() {
   localStorage.removeItem("token");
-  window.location.href = "index.html";
+  window.location.href = "./index.html";
 }
