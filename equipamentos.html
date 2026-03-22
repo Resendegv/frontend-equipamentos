@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manutenções</title>
-  <link rel="stylesheet" href="./app.css?v=20" />
+  <title>Equipamentos</title>
+  <link rel="stylesheet" href="./app.css?v=10" />
 </head>
 <body>
   <div class="layout">
@@ -13,8 +13,8 @@
 
       <nav class="nav">
         <a class="nav-link" href="./dashboard.html">Dashboard</a>
-        <a class="nav-link" href="./equipamentos.html">Equipamentos</a>
-        <a class="nav-link active" href="./manutencoes.html">Manutenções</a>
+        <a class="nav-link active" href="./equipamentos.html">Equipamentos</a>
+        <a class="nav-link" href="./manutencoes.html">Manutenções</a>
       </nav>
 
       <button id="btnLogout" class="btn btn-danger full">Sair</button>
@@ -23,37 +23,31 @@
     <main class="content">
       <header class="page-header with-actions">
         <div>
-          <h1>Manutenções</h1>
+          <h1>Equipamentos</h1>
           <p class="muted">Cadastro, edição, exclusão e filtros</p>
         </div>
 
-        <button id="btnNovaManutencao" class="btn btn-primary">Nova manutenção</button>
+        <button id="btnNovoEquipamento" class="btn btn-primary">Novo equipamento</button>
       </header>
 
       <section class="toolbar">
         <div class="toolbar-item">
-          <label for="filtroStatusManutencao">Status</label>
-          <select id="filtroStatusManutencao">
+          <label for="filtroStatusEquipamento">Status</label>
+          <select id="filtroStatusEquipamento">
             <option value="">Todos</option>
-            <option value="pendente">Pendente</option>
-            <option value="em andamento">Em andamento</option>
-            <option value="aberta">Aberta</option>
-            <option value="concluída">Concluída</option>
+            <option value="operando">Operando</option>
+            <option value="em manutenção">Em manutenção</option>
+            <option value="parado">Parado</option>
           </select>
         </div>
 
-        <div class="toolbar-item">
-          <label for="filtroTipoManutencao">Tipo</label>
-          <select id="filtroTipoManutencao">
-            <option value="">Todos</option>
-            <option value="preventiva">Preventiva</option>
-            <option value="corretiva">Corretiva</option>
-            <option value="inspeção">Inspeção</option>
-          </select>
+        <div class="toolbar-item grow">
+          <label for="buscaEquipamento">Buscar</label>
+          <input type="text" id="buscaEquipamento" placeholder="Buscar por nome, modelo ou fabricante" />
         </div>
 
         <div class="toolbar-actions">
-          <button id="btnAtualizarManutencoes" class="btn btn-secondary">Atualizar</button>
+          <button id="btnAtualizarEquipamentos" class="btn btn-secondary">Atualizar</button>
         </div>
       </section>
 
@@ -63,87 +57,74 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Equipamento</th>
-                <th>Título</th>
-                <th>Tipo</th>
-                <th>Data prevista</th>
-                <th>Data conclusão</th>
+                <th>Nome</th>
+                <th>Fabricante</th>
+                <th>Modelo</th>
+                <th>Ano</th>
                 <th>Status</th>
-                <th>Prazo</th>
+                <th>Próxima manutenção</th>
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="tabelaManutencoes"></tbody>
+            <tbody id="tabelaEquipamentos"></tbody>
           </table>
         </div>
       </section>
     </main>
   </div>
 
-  <div id="modalManutencao" class="modal hidden">
+  <div id="modalEquipamento" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header">
-        <h2 id="tituloModalManutencao">Nova manutenção</h2>
-        <button id="btnFecharModalManutencao" class="btn-icon">×</button>
+        <h2 id="tituloModalEquipamento">Novo equipamento</h2>
+        <button id="btnFecharModalEquipamento" class="btn-icon" type="button">×</button>
       </div>
 
-      <form id="formManutencao" class="form-grid">
-        <input type="hidden" id="manutencaoId" />
+      <form id="formEquipamento" class="form-grid">
+        <input type="hidden" id="equipamentoId" />
 
         <div class="form-group">
-          <label for="equipamento_id">Equipamento</label>
-          <select id="equipamento_id" required></select>
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" required />
         </div>
 
         <div class="form-group">
-          <label for="titulo">Título</label>
-          <input type="text" id="titulo" required />
+          <label for="fabricante">Fabricante</label>
+          <input type="text" id="fabricante" required />
         </div>
 
         <div class="form-group">
-          <label for="descricao">Descrição</label>
-          <input type="text" id="descricao" />
+          <label for="modelo">Modelo</label>
+          <input type="text" id="modelo" required />
         </div>
 
         <div class="form-group">
-          <label for="tipo">Tipo</label>
-          <select id="tipo" required>
-            <option value="preventiva">Preventiva</option>
-            <option value="corretiva">Corretiva</option>
-            <option value="inspeção">Inspeção</option>
+          <label for="ano">Ano</label>
+          <input type="number" id="ano" min="1900" max="2100" required />
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" required>
+            <option value="operando">Operando</option>
+            <option value="em manutenção">Em manutenção</option>
+            <option value="parado">Parado</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="data_prevista">Data prevista</label>
-          <input type="date" id="data_prevista" />
-        </div>
-
-        <div class="form-group">
-          <label for="data_conclusao">Data conclusão</label>
-          <input type="date" id="data_conclusao" />
-        </div>
-
-        <div class="form-group">
-          <label for="statusManutencao">Status</label>
-          <select id="statusManutencao" required>
-            <option value="pendente">Pendente</option>
-            <option value="aberta">Aberta</option>
-            <option value="em andamento">Em andamento</option>
-            <option value="concluída">Concluída</option>
-          </select>
+          <label for="proxima_manutencao">Próxima manutenção</label>
+          <input type="date" id="proxima_manutencao" />
         </div>
 
         <div class="form-actions">
-          <button type="button" id="btnCancelarManutencao" class="btn btn-secondary">Cancelar</button>
+          <button type="button" id="btnCancelarEquipamento" class="btn btn-secondary">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="./config.js?v=20"></script>
-  <script src="./common.js?v=20"></script>
-  <script src="./manutencoes.js?v=20"></script>
+  <script src="./equipamentos.js?v=11"></script>
 </body>
 </html>
