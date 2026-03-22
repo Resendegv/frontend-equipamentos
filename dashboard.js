@@ -1,64 +1,17 @@
-const API_URL = "https://api-equipamentos2.onrender.com";
-
 let equipamentosBase = [];
 let manutencoesBase = [];
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function authHeaders() {
-  const token = getToken();
-
-  if (!token) {
-    window.location.href = "index.html";
-    throw new Error("Usuário sem token.");
-  }
-
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`
-  };
-}
-
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "index.html";
-}
 
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
 }
 
-function normalizeText(value) {
-  if (!value) return "";
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function parseApiList(data) {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.dados)) return data.dados;
-  if (Array.isArray(data.items)) return data.items;
-  return [];
-}
-
-function formatDateBR(dateString) {
-  if (!dateString) return "-";
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return dateString;
-  return d.toLocaleDateString("pt-BR");
-}
-
 function daysUntil(dateString) {
   if (!dateString) return null;
+
   const today = new Date();
   const target = new Date(dateString);
+
   if (Number.isNaN(target.getTime())) return null;
 
   today.setHours(0, 0, 0, 0);
@@ -69,7 +22,7 @@ function daysUntil(dateString) {
 }
 
 async function fetchEquipamentos() {
-  const response = await fetch(`${API_URL}/equipamentos/?pagina=1&por_pagina=100`, {
+  const response = await fetch(`${window.API_URL}/equipamentos/?pagina=1&por_pagina=100`, {
     method: "GET",
     headers: authHeaders()
   });
@@ -83,22 +36,17 @@ async function fetchEquipamentos() {
 }
 
 async function fetchManutencoes() {
-  try {
-    const response = await fetch(`${API_URL}/manutencoes/?pagina=1&por_pagina=100`, {
-      method: "GET",
-      headers: authHeaders()
-    });
+  const response = await fetch(`${window.API_URL}/manutencoes/?pagina=1&por_pagina=100`, {
+    method: "GET",
+    headers: authHeaders()
+  });
 
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return parseApiList(data);
-  } catch (error) {
-    console.warn("Rotas de manutenção não disponíveis:", error);
-    return [];
+  if (!response.ok) {
+    throw new Error(`Erro ao buscar manutenções: ${response.status}`);
   }
+
+  const data = await response.json();
+  return parseApiList(data);
 }
 
 function getDashboardFilters() {
@@ -115,7 +63,6 @@ function filtrarEquipamentos(equipamentos) {
     const statusOk = !status || normalizeText(eq.status) === normalizeText(status);
     const textoBase = normalizeText(`${eq.nome || ""} ${eq.modelo || ""} ${eq.fabricante || ""}`);
     const buscaOk = !busca || textoBase.includes(busca);
-
     return statusOk && buscaOk;
   });
 }
@@ -131,15 +78,9 @@ function computeResumo(equipamentosFiltrados, manutencoes) {
   let vencidas = 0;
 
   manutencoes.forEach((man) => {
-    const status = normalizeText(man.status);
-    if (status === "concluida" || status === "realizada") return;
-
-    const dias = daysUntil(man.data_prevista);
-    if (dias === null) return;
-
-    if (dias < 0) vencidas++;
-    else if (dias <= 7) vencendo++;
-    else noPrazo++;
+    if (normalizeText(man.status_prazo) === "vencida") vencidas++;
+    else if ((man.prazo_restante ?? 999) <= 7) vencendo++;
+    else if (normalizeText(man.status_prazo) === "no prazo") noPrazo++;
   });
 
   return {
@@ -158,15 +99,9 @@ function updateCards(resumo) {
   setText("totalOperando", resumo.operando);
   setText("totalManutencao", resumo.manutencao);
   setText("totalParado", resumo.parado);
-
   setText("totalNoPrazo", resumo.noPrazo);
   setText("totalVencendo", resumo.vencendo);
   setText("totalVencidas", resumo.vencidas);
-}
-
-function renderEmpty(containerId, message) {
-  const container = document.getElementById(containerId);
-  if (container) container.innerHTML = `<p class="empty">${message}</p>`;
 }
 
 function renderAlertas(equipamentos, manutencoes) {
@@ -179,38 +114,26 @@ function renderAlertas(equipamentos, manutencoes) {
     const status = normalizeText(eq.status);
 
     if (status === "parado") {
-      alertas.push({
-        tipo: "danger",
-        texto: `${eq.nome} está parado.`
-      });
+      alertas.push({ tipo: "danger", texto: `${eq.nome} está parado.` });
     }
 
     if (status === "em manutencao") {
-      alertas.push({
-        tipo: "warning",
-        texto: `${eq.nome} está em manutenção.`
-      });
+      alertas.push({ tipo: "warning", texto: `${eq.nome} está em manutenção.` });
     }
   });
 
   manutencoes.forEach((man) => {
-    const status = normalizeText(man.status);
-    if (status === "concluida" || status === "realizada") return;
-
-    const dias = daysUntil(man.data_prevista);
     const nomeEquipamento = man.equipamento_nome || `Equipamento #${man.equipamento_id || "-"}`;
 
-    if (dias === null) return;
-
-    if (dias < 0) {
+    if (normalizeText(man.status_prazo) === "vencida") {
       alertas.push({
         tipo: "danger",
         texto: `Manutenção vencida de ${nomeEquipamento}. Prevista para ${formatDateBR(man.data_prevista)}.`
       });
-    } else if (dias <= 7) {
+    } else if ((man.prazo_restante ?? 999) <= 7 && normalizeText(man.status_prazo) === "no prazo") {
       alertas.push({
         tipo: "warning",
-        texto: `Manutenção de ${nomeEquipamento} vence em ${dias} dia(s).`
+        texto: `Manutenção de ${nomeEquipamento} vence em ${man.prazo_restante} dia(s).`
       });
     }
   });
@@ -221,7 +144,7 @@ function renderAlertas(equipamentos, manutencoes) {
   }
 
   container.innerHTML = alertas
-    .map((item) => `<div class="list-item ${item.tipo}">${item.texto}</div>`)
+    .map((item) => `<div class="list-item ${item.tipo}">${escapeHtml(item.texto)}</div>`)
     .join("");
 }
 
@@ -250,7 +173,7 @@ function buildBars(dataMap) {
     const width = Math.max((value / max) * 100, value > 0 ? 10 : 0);
     return `
       <div class="bar-row">
-        <div class="bar-label">${label}</div>
+        <div class="bar-label">${escapeHtml(label)}</div>
         <div class="bar-track">
           <div class="bar-fill" style="width:${width}%"></div>
         </div>
@@ -288,13 +211,13 @@ function renderTipos(equipamentos) {
   const entries = Object.entries(tipos).sort((a, b) => b[1] - a[1]);
 
   if (!entries.length) {
-    container.innerHTML = `<p class="empty">Nenhum tipo encontrado.</p>`;
+    container.innerHTML = `<p class="empty">Nenhum fabricante encontrado.</p>`;
     chart.innerHTML = `<p class="empty">Sem dados.</p>`;
     return;
   }
 
   container.innerHTML = entries
-    .map(([tipo, quantidade]) => `<div class="list-item neutral"><strong>${tipo}:</strong> ${quantidade}</div>`)
+    .map(([tipo, quantidade]) => `<div class="list-item neutral"><strong>${escapeHtml(tipo)}:</strong> ${quantidade}</div>`)
     .join("");
 
   chart.innerHTML = buildBars(Object.fromEntries(entries));
@@ -306,13 +229,8 @@ function renderManutencoesCriticas(manutencoes) {
 
   const criticas = manutencoes
     .filter((man) => {
-      const status = normalizeText(man.status);
-      if (status === "concluida" || status === "realizada") return false;
-
-      const dias = daysUntil(man.data_prevista);
-      const prioridade = normalizeText(man.prioridade);
-
-      return prioridade === "alta" || prioridade === "critica" || (dias !== null && dias <= 7);
+      return normalizeText(man.status_prazo) === "vencida" ||
+        ((man.prazo_restante ?? 999) <= 7 && normalizeText(man.status_prazo) === "no prazo");
     })
     .sort((a, b) => {
       const da = daysUntil(a.data_prevista);
@@ -326,16 +244,14 @@ function renderManutencoesCriticas(manutencoes) {
   }
 
   container.innerHTML = criticas.map((man) => {
-    const dias = daysUntil(man.data_prevista);
     const nomeEquipamento = man.equipamento_nome || `Equipamento #${man.equipamento_id || "-"}`;
-
     return `
       <div class="list-item danger">
-        <strong>${nomeEquipamento}</strong><br>
-        <span>${man.descricao || "Sem descrição"}</span><br>
+        <strong>${escapeHtml(nomeEquipamento)}</strong><br>
+        <span>${escapeHtml(man.titulo || "Sem título")}</span><br>
+        <span>Tipo: ${escapeHtml(man.tipo || "-")}</span><br>
         <span>Prevista: ${formatDateBR(man.data_prevista)}</span><br>
-        <span>Prioridade: ${man.prioridade || "-"}</span><br>
-        <span>${dias !== null ? `Prazo: ${dias} dia(s)` : "Prazo não informado"}</span>
+        <span>Status: ${escapeHtml(man.status_prazo || "-")}</span>
       </div>
     `;
   }).join("");
@@ -352,45 +268,46 @@ function renderEquipamentosList(equipamentos) {
 
   container.innerHTML = equipamentos.map((eq) => `
     <div class="list-item neutral">
-      <strong>${eq.nome || "Sem nome"}</strong><br>
-      <span>Fabricante: ${eq.fabricante || "-"}</span> |
-      <span>Modelo: ${eq.modelo || "-"}</span> |
-      <span>Ano: ${eq.ano || "-"}</span> |
-      <span>Status: ${eq.status || "-"}</span>
+      <strong>${escapeHtml(eq.nome)}</strong><br>
+      <span>${escapeHtml(eq.fabricante)} - ${escapeHtml(eq.modelo)}</span><br>
+      <span>Status: ${escapeHtml(eq.status)}</span>
     </div>
   `).join("");
+}
+
+function renderDashboard() {
+  const equipamentosFiltrados = filtrarEquipamentos(equipamentosBase);
+  const ids = new Set(equipamentosFiltrados.map((eq) => Number(eq.id)));
+  const manutencoesRelacionadas = manutencoesBase.filter((man) => ids.has(Number(man.equipamento_id)));
+
+  const resumo = computeResumo(equipamentosFiltrados, manutencoesRelacionadas);
+
+  updateCards(resumo);
+  renderAlertas(equipamentosFiltrados, manutencoesRelacionadas);
+  renderStatusSummary(equipamentosFiltrados);
+  renderGraficoStatus(equipamentosFiltrados);
+  renderTipos(equipamentosFiltrados);
+  renderManutencoesCriticas(manutencoesRelacionadas);
+  renderEquipamentosList(equipamentosFiltrados);
 }
 
 async function carregarDashboard() {
   try {
     equipamentosBase = await fetchEquipamentos();
     manutencoesBase = await fetchManutencoes();
-
-    const equipamentosFiltrados = filtrarEquipamentos(equipamentosBase);
-    const resumo = computeResumo(equipamentosFiltrados, manutencoesBase);
-
-    updateCards(resumo);
-    renderAlertas(equipamentosFiltrados, manutencoesBase);
-    renderStatusSummary(equipamentosFiltrados);
-    renderGraficoStatus(equipamentosFiltrados);
-    renderTipos(equipamentosFiltrados);
-    renderManutencoesCriticas(manutencoesBase);
-    renderEquipamentosList(equipamentosFiltrados);
+    renderDashboard();
   } catch (error) {
     console.error(error);
-    renderEmpty("listaAlertas", `Erro ao carregar dashboard: ${error.message}`);
-    renderEmpty("listaStatus", "Não foi possível carregar.");
-    renderEmpty("listaTipos", "Não foi possível carregar.");
-    renderEmpty("listaManutencoesCriticas", "Não foi possível carregar.");
-    renderEmpty("listaEquipamentos", "Não foi possível carregar.");
+    document.getElementById("listaAlertas").innerHTML =
+      `<p class="empty">Erro ao carregar dashboard: ${escapeHtml(error.message)}</p>`;
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnLogout")?.addEventListener("click", logout);
   document.getElementById("btnAtualizarDashboard")?.addEventListener("click", carregarDashboard);
-  document.getElementById("filtroStatusDashboard")?.addEventListener("change", carregarDashboard);
-  document.getElementById("buscaDashboard")?.addEventListener("input", carregarDashboard);
+  document.getElementById("filtroStatusDashboard")?.addEventListener("change", renderDashboard);
+  document.getElementById("buscaDashboard")?.addEventListener("input", renderDashboard);
 
   carregarDashboard();
 });

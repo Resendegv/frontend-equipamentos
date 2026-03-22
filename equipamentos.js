@@ -1,51 +1,4 @@
-const API_URL = "https://api-equipamentos2.onrender.com";
 let equipamentos = [];
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function authHeaders() {
-  const token = getToken();
-
-  if (!token) {
-    window.location.href = "index.html";
-    throw new Error("Token não encontrado.");
-  }
-
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`
-  };
-}
-
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "index.html";
-}
-
-function normalizeText(value) {
-  if (!value) return "";
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function parseApiList(data) {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.dados)) return data.dados;
-  return [];
-}
-
-function formatDateBR(dateString) {
-  if (!dateString) return "-";
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return dateString;
-  return d.toLocaleDateString("pt-BR");
-}
 
 function openModal(editing = false, item = null) {
   const modal = document.getElementById("modalEquipamento");
@@ -58,8 +11,8 @@ function openModal(editing = false, item = null) {
   document.getElementById("fabricante").value = item?.fabricante || "";
   document.getElementById("modelo").value = item?.modelo || "";
   document.getElementById("ano").value = item?.ano || "";
-  document.getElementById("status").value = item?.status || "operando";
-  document.getElementById("proxima_manutencao").value = item?.proxima_manutencao || "";
+  document.getElementById("status").value =
+    normalizeText(item?.status) === "parado" ? "parado" : "operando";
 
   modal.classList.remove("hidden");
 }
@@ -82,13 +35,12 @@ function filtrarEquipamentos(lista) {
     const okStatus = !status || normalizeText(eq.status) === normalizeText(status);
     const base = normalizeText(`${eq.nome || ""} ${eq.modelo || ""} ${eq.fabricante || ""}`);
     const okBusca = !busca || base.includes(busca);
-
     return okStatus && okBusca;
   });
 }
 
 async function fetchEquipamentos() {
-  const response = await fetch(`${API_URL}/equipamentos/?pagina=1&por_pagina=100`, {
+  const response = await fetch(`${window.API_URL}/equipamentos/?pagina=1&por_pagina=100`, {
     method: "GET",
     headers: authHeaders()
   });
@@ -110,7 +62,7 @@ function renderTabela() {
   if (!lista.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="table-empty">Nenhum equipamento encontrado.</td>
+        <td colspan="7" class="table-empty">Nenhum equipamento encontrado.</td>
       </tr>
     `;
     return;
@@ -119,12 +71,11 @@ function renderTabela() {
   tbody.innerHTML = lista.map((eq) => `
     <tr>
       <td>${eq.id ?? "-"}</td>
-      <td>${eq.nome || "-"}</td>
-      <td>${eq.fabricante || "-"}</td>
-      <td>${eq.modelo || "-"}</td>
+      <td>${escapeHtml(eq.nome || "-")}</td>
+      <td>${escapeHtml(eq.fabricante || "-")}</td>
+      <td>${escapeHtml(eq.modelo || "-")}</td>
       <td>${eq.ano || "-"}</td>
-      <td><span class="badge">${eq.status || "-"}</span></td>
-      <td>${formatDateBR(eq.proxima_manutencao)}</td>
+      <td><span class="badge">${escapeHtml(eq.status || "-")}</span></td>
       <td class="actions-cell">
         <button class="btn btn-small btn-secondary" onclick="editarEquipamento(${eq.id})">Editar</button>
         <button class="btn btn-small btn-danger" onclick="excluirEquipamento(${eq.id})">Excluir</button>
@@ -142,12 +93,13 @@ async function salvarEquipamento(event) {
     fabricante: document.getElementById("fabricante").value.trim(),
     modelo: document.getElementById("modelo").value.trim(),
     ano: Number(document.getElementById("ano").value),
-    status: document.getElementById("status").value,
-    proxima_manutencao: document.getElementById("proxima_manutencao").value || null
+    status: document.getElementById("status").value
   };
 
   const method = id ? "PUT" : "POST";
-  const url = id ? `${API_URL}/equipamentos/${id}` : `${API_URL}/equipamentos/`;
+  const url = id
+    ? `${window.API_URL}/equipamentos/${id}`
+    : `${window.API_URL}/equipamentos/`;
 
   const response = await fetch(url, {
     method,
@@ -178,7 +130,7 @@ async function excluirEquipamento(id) {
   const confirmar = confirm("Deseja realmente excluir este equipamento?");
   if (!confirmar) return;
 
-  const response = await fetch(`${API_URL}/equipamentos/${id}`, {
+  const response = await fetch(`${window.API_URL}/equipamentos/${id}`, {
     method: "DELETE",
     headers: authHeaders()
   });
@@ -206,7 +158,7 @@ async function carregarPagina() {
     if (tbody) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" class="table-empty">Erro ao carregar equipamentos: ${error.message}</td>
+          <td colspan="7" class="table-empty">Erro ao carregar equipamentos: ${escapeHtml(error.message)}</td>
         </tr>
       `;
     }

@@ -1,7 +1,6 @@
-const API_URL = "https://api-equipamentos2.onrender.com";
-
 const loginForm = document.getElementById("loginForm");
 const mensagem = document.getElementById("mensagem");
+const btnEntrar = document.getElementById("btnEntrar");
 
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
@@ -10,46 +9,43 @@ if (loginForm) {
     const username = document.getElementById("username").value.trim();
     const senha = document.getElementById("senha").value.trim();
 
-    mensagem.textContent = "Entrando...";
+    mensagem.textContent = "";
     mensagem.style.color = "black";
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    if (!username || !senha) {
+      mensagem.textContent = "Preencha usuário e senha.";
+      mensagem.style.color = "red";
+      return;
+    }
+
+    btnEntrar.disabled = true;
+    btnEntrar.textContent = "Entrando...";
+    mensagem.textContent = "Validando acesso...";
 
     try {
-      const body = new URLSearchParams();
-      body.append("username", username);
-      body.append("password", senha);
-
-      const response = await fetch(`${API_URL}/auth/login-form`, {
+      const response = await fetch(`${window.API_URL}/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
+          "Accept": "application/json"
         },
-        body: body.toString(),
-        signal: controller.signal,
+        body: JSON.stringify({
+          username,
+          password: senha
+        })
       });
 
-      clearTimeout(timeout);
-
-      const text = await response.text();
-      let data = {};
-
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { raw: text };
-      }
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || `HTTP ${response.status}`);
+        throw new Error(data.detail || "Falha no login.");
       }
 
       if (!data.access_token) {
-        throw new Error("Token não retornado pela API");
+        throw new Error("Token não retornado pela API.");
       }
 
-      localStorage.setItem("token", data.access_token);
+      setToken(data.access_token, data.token_type || "bearer");
 
       mensagem.textContent = "Login realizado com sucesso!";
       mensagem.style.color = "green";
@@ -58,25 +54,12 @@ if (loginForm) {
         window.location.href = "./dashboard.html";
       }, 500);
     } catch (error) {
-      clearTimeout(timeout);
-
-      if (error.name === "AbortError") {
-        mensagem.textContent = "A API demorou para responder. Tente novamente em alguns segundos.";
-      } else {
-        mensagem.textContent = error.message || "Erro ao conectar com a API";
-      }
-
+      mensagem.textContent = error.message || "Erro ao conectar com a API.";
       mensagem.style.color = "red";
-      console.error("ERRO LOGIN:", error);
+      console.error("Erro no login:", error);
+    } finally {
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = "Entrar";
     }
   });
-}
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "./index.html";
 }

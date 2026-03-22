@@ -1,55 +1,8 @@
-const API_URL = "https://api-equipamentos2.onrender.com";
 let manutencoes = [];
 let equipamentos = [];
 
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function authHeaders() {
-  const token = getToken();
-
-  if (!token) {
-    window.location.href = "index.html";
-    throw new Error("Token não encontrado.");
-  }
-
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`
-  };
-}
-
-function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "index.html";
-}
-
-function normalizeText(value) {
-  if (!value) return "";
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function parseApiList(data) {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.dados)) return data.dados;
-  return [];
-}
-
-function formatDateBR(dateString) {
-  if (!dateString) return "-";
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return dateString;
-  return d.toLocaleDateString("pt-BR");
-}
-
 async function fetchEquipamentos() {
-  const response = await fetch(`${API_URL}/equipamentos/?pagina=1&por_pagina=100`, {
+  const response = await fetch(`${window.API_URL}/equipamentos/?pagina=1&por_pagina=100`, {
     method: "GET",
     headers: authHeaders()
   });
@@ -63,7 +16,7 @@ async function fetchEquipamentos() {
 }
 
 async function fetchManutencoes() {
-  const response = await fetch(`${API_URL}/manutencoes/?pagina=1&por_pagina=100`, {
+  const response = await fetch(`${window.API_URL}/manutencoes/?pagina=1&por_pagina=100`, {
     method: "GET",
     headers: authHeaders()
   });
@@ -81,24 +34,24 @@ function fillEquipamentoSelect() {
   if (!select) return;
 
   select.innerHTML = equipamentos.map((eq) => `
-    <option value="${eq.id}">${eq.nome} - ${eq.modelo || "-"}</option>
+    <option value="${eq.id}">${escapeHtml(eq.nome)} - ${escapeHtml(eq.modelo || "-")}</option>
   `).join("");
 }
 
 function getFiltros() {
   return {
     status: document.getElementById("filtroStatusManutencao")?.value || "",
-    prioridade: document.getElementById("filtroPrioridadeManutencao")?.value || ""
+    tipo: document.getElementById("filtroTipoManutencao")?.value || ""
   };
 }
 
 function filtrarManutencoes(lista) {
-  const { status, prioridade } = getFiltros();
+  const { status, tipo } = getFiltros();
 
   return lista.filter((item) => {
     const okStatus = !status || normalizeText(item.status) === normalizeText(status);
-    const okPrioridade = !prioridade || normalizeText(item.prioridade) === normalizeText(prioridade);
-    return okStatus && okPrioridade;
+    const okTipo = !tipo || normalizeText(item.tipo) === normalizeText(tipo);
+    return okStatus && okTipo;
   });
 }
 
@@ -106,6 +59,22 @@ function nomeEquipamento(item) {
   return item.equipamento_nome
     || equipamentos.find(eq => Number(eq.id) === Number(item.equipamento_id))?.nome
     || `Equipamento #${item.equipamento_id || "-"}`;
+}
+
+function textoPrazo(item) {
+  if (item.status_prazo === "vencida") {
+    return `Vencida há ${item.vencida_dias ?? 0} dia(s)`;
+  }
+  if (item.status_prazo === "no prazo") {
+    return `${item.prazo_restante ?? 0} dia(s) restantes`;
+  }
+  if (item.status_prazo === "concluída no prazo") {
+    return "Concluída no prazo";
+  }
+  if (item.status_prazo === "concluída atrasada") {
+    return `Concluída com ${item.vencida_dias ?? 0} dia(s) de atraso`;
+  }
+  return item.status_prazo || "-";
 }
 
 function renderTabela() {
@@ -117,7 +86,7 @@ function renderTabela() {
   if (!lista.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="table-empty">Nenhuma manutenção encontrada.</td>
+        <td colspan="9" class="table-empty">Nenhuma manutenção encontrada.</td>
       </tr>
     `;
     return;
@@ -126,12 +95,13 @@ function renderTabela() {
   tbody.innerHTML = lista.map((item) => `
     <tr>
       <td>${item.id ?? "-"}</td>
-      <td>${nomeEquipamento(item)}</td>
-      <td>${item.descricao || "-"}</td>
+      <td>${escapeHtml(nomeEquipamento(item))}</td>
+      <td>${escapeHtml(item.titulo || "-")}</td>
+      <td>${escapeHtml(item.tipo || "-")}</td>
       <td>${formatDateBR(item.data_prevista)}</td>
-      <td>${formatDateBR(item.data_realizada)}</td>
-      <td><span class="badge">${item.status || "-"}</span></td>
-      <td><span class="badge">${item.prioridade || "-"}</span></td>
+      <td>${formatDateBR(item.data_conclusao)}</td>
+      <td><span class="badge">${escapeHtml(item.status || "-")}</span></td>
+      <td>${escapeHtml(textoPrazo(item))}</td>
       <td class="actions-cell">
         <button class="btn btn-small btn-secondary" onclick="editarManutencao(${item.id})">Editar</button>
         <button class="btn btn-small btn-danger" onclick="excluirManutencao(${item.id})">Excluir</button>
@@ -148,11 +118,12 @@ function openModal(editing = false, item = null) {
 
   document.getElementById("manutencaoId").value = item?.id || "";
   document.getElementById("equipamento_id").value = item?.equipamento_id || equipamentos[0]?.id || "";
+  document.getElementById("titulo").value = item?.titulo || "";
   document.getElementById("descricao").value = item?.descricao || "";
-  document.getElementById("data_prevista").value = item?.data_prevista || "";
-  document.getElementById("data_realizada").value = item?.data_realizada || "";
+  document.getElementById("tipo").value = item?.tipo || "preventiva";
+  document.getElementById("data_prevista").value = formatDateForInput(item?.data_prevista);
+  document.getElementById("data_conclusao").value = formatDateForInput(item?.data_conclusao);
   document.getElementById("statusManutencao").value = item?.status || "pendente";
-  document.getElementById("prioridade").value = item?.prioridade || "média";
 
   modal.classList.remove("hidden");
 }
@@ -168,15 +139,18 @@ async function salvarManutencao(event) {
 
   const payload = {
     equipamento_id: Number(document.getElementById("equipamento_id").value),
-    descricao: document.getElementById("descricao").value.trim(),
-    data_prevista: document.getElementById("data_prevista").value,
-    data_realizada: document.getElementById("data_realizada").value || null,
+    titulo: document.getElementById("titulo").value.trim(),
+    descricao: document.getElementById("descricao").value.trim() || null,
+    tipo: document.getElementById("tipo").value,
     status: document.getElementById("statusManutencao").value,
-    prioridade: document.getElementById("prioridade").value
+    data_prevista: toIsoEndOfDay(document.getElementById("data_prevista").value),
+    data_conclusao: toIsoEndOfDay(document.getElementById("data_conclusao").value)
   };
 
   const method = id ? "PUT" : "POST";
-  const url = id ? `${API_URL}/manutencoes/${id}` : `${API_URL}/manutencoes/`;
+  const url = id
+    ? `${window.API_URL}/manutencoes/${id}`
+    : `${window.API_URL}/manutencoes/`;
 
   const response = await fetch(url, {
     method,
@@ -207,7 +181,7 @@ async function excluirManutencao(id) {
   const confirmar = confirm("Deseja realmente excluir esta manutenção?");
   if (!confirmar) return;
 
-  const response = await fetch(`${API_URL}/manutencoes/${id}`, {
+  const response = await fetch(`${window.API_URL}/manutencoes/${id}`, {
     method: "DELETE",
     headers: authHeaders()
   });
@@ -237,7 +211,7 @@ async function carregarPagina() {
     if (tbody) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" class="table-empty">Erro ao carregar manutenções: ${error.message}</td>
+          <td colspan="9" class="table-empty">Erro ao carregar manutenções: ${escapeHtml(error.message)}</td>
         </tr>
       `;
     }
@@ -262,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btnAtualizarManutencoes")?.addEventListener("click", carregarPagina);
   document.getElementById("filtroStatusManutencao")?.addEventListener("change", renderTabela);
-  document.getElementById("filtroPrioridadeManutencao")?.addEventListener("change", renderTabela);
+  document.getElementById("filtroTipoManutencao")?.addEventListener("change", renderTabela);
 
   carregarPagina();
 });
