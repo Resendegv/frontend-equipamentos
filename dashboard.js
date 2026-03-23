@@ -6,6 +6,11 @@ function setText(id, value) {
   if (el) el.textContent = value;
 }
 
+function renderEmpty(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (container) container.innerHTML = `<p class="empty">${escapeHtml(message)}</p>`;
+}
+
 function daysUntil(dateString) {
   if (!dateString) return null;
 
@@ -36,17 +41,22 @@ async function fetchEquipamentos() {
 }
 
 async function fetchManutencoes() {
-  const response = await fetch(`${window.API_URL}/manutencoes/?pagina=1&por_pagina=100`, {
-    method: "GET",
-    headers: authHeaders()
-  });
+  try {
+    const response = await fetch(`${window.API_URL}/manutencoes/?pagina=1&por_pagina=100`, {
+      method: "GET",
+      headers: authHeaders()
+    });
 
-  if (!response.ok) {
-    throw new Error(`Erro ao buscar manutenções: ${response.status}`);
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return parseApiList(data);
+  } catch (error) {
+    console.warn("Rotas de manutenção indisponíveis:", error);
+    return [];
   }
-
-  const data = await response.json();
-  return parseApiList(data);
 }
 
 function getDashboardFilters() {
@@ -78,9 +88,15 @@ function computeResumo(equipamentosFiltrados, manutencoes) {
   let vencidas = 0;
 
   manutencoes.forEach((man) => {
-    if (normalizeText(man.status_prazo) === "vencida") vencidas++;
-    else if ((man.prazo_restante ?? 999) <= 7) vencendo++;
-    else if (normalizeText(man.status_prazo) === "no prazo") noPrazo++;
+    const status = normalizeText(man.status);
+    if (status === "concluida" || status === "realizada") return;
+
+    const dias = daysUntil(man.data_prevista);
+    if (dias === null) return;
+
+    if (dias < 0) vencidas++;
+    else if (dias <= 7) vencendo++;
+    else noPrazo++;
   });
 
   return {
@@ -124,16 +140,21 @@ function renderAlertas(equipamentos, manutencoes) {
 
   manutencoes.forEach((man) => {
     const nomeEquipamento = man.equipamento_nome || `Equipamento #${man.equipamento_id || "-"}`;
+    const dias = daysUntil(man.data_prevista);
+    const status = normalizeText(man.status);
 
-    if (normalizeText(man.status_prazo) === "vencida") {
+    if (status === "concluida" || status === "realizada") return;
+    if (dias === null) return;
+
+    if (dias < 0) {
       alertas.push({
         tipo: "danger",
         texto: `Manutenção vencida de ${nomeEquipamento}. Prevista para ${formatDateBR(man.data_prevista)}.`
       });
-    } else if ((man.prazo_restante ?? 999) <= 7 && normalizeText(man.status_prazo) === "no prazo") {
+    } else if (dias <= 7) {
       alertas.push({
         tipo: "warning",
-        texto: `Manutenção de ${nomeEquipamento} vence em ${man.prazo_restante} dia(s).`
+        texto: `Manutenção de ${nomeEquipamento} vence em ${dias} dia(s).`
       });
     }
   });
@@ -229,8 +250,12 @@ function renderManutencoesCriticas(manutencoes) {
 
   const criticas = manutencoes
     .filter((man) => {
-      return normalizeText(man.status_prazo) === "vencida" ||
-        ((man.prazo_restante ?? 999) <= 7 && normalizeText(man.status_prazo) === "no prazo");
+      const dias = daysUntil(man.data_prevista);
+      const prioridade = normalizeText(man.prioridade);
+      const status = normalizeText(man.status);
+
+      if (status === "concluida" || status === "realizada") return false;
+      return prioridade === "alta" || prioridade === "critica" || (dias !== null && dias <= 7);
     })
     .sort((a, b) => {
       const da = daysUntil(a.data_prevista);
@@ -244,14 +269,16 @@ function renderManutencoesCriticas(manutencoes) {
   }
 
   container.innerHTML = criticas.map((man) => {
+    const dias = daysUntil(man.data_prevista);
     const nomeEquipamento = man.equipamento_nome || `Equipamento #${man.equipamento_id || "-"}`;
+
     return `
       <div class="list-item danger">
         <strong>${escapeHtml(nomeEquipamento)}</strong><br>
-        <span>${escapeHtml(man.titulo || "Sem título")}</span><br>
-        <span>Prioridade: ${escapeHtml(man.prioridade || "-")}</span><br>
+        <span>${escapeHtml(man.titulo || man.descricao || "Sem descrição")}</span><br>
         <span>Prevista: ${formatDateBR(man.data_prevista)}</span><br>
-        <span>Status: ${escapeHtml(man.status_prazo || "-")}</span>
+        <span>Prioridade: ${escapeHtml(man.prioridade || "-")}</span><br>
+        <span>${dias !== null ? `Prazo: ${dias} dia(s)` : "Prazo não informado"}</span>
       </div>
     `;
   }).join("");
@@ -268,9 +295,11 @@ function renderEquipamentosList(equipamentos) {
 
   container.innerHTML = equipamentos.map((eq) => `
     <div class="list-item neutral">
-      <strong>${escapeHtml(eq.nome)}</strong><br>
-      <span>${escapeHtml(eq.fabricante)} - ${escapeHtml(eq.modelo)}</span><br>
-      <span>Status: ${escapeHtml(eq.status)}</span>
+      <strong>${escapeHtml(eq.nome || "Sem nome")}</strong><br>
+      <span>Fabricante: ${escapeHtml(eq.fabricante || "-")}</span> |
+      <span>Modelo: ${escapeHtml(eq.modelo || "-")}</span> |
+      <span>Ano: ${escapeHtml(eq.ano || "-")}</span> |
+      <span>Status: ${escapeHtml(eq.status || "-")}</span>
     </div>
   `).join("");
 }
@@ -298,16 +327,19 @@ async function carregarDashboard() {
     renderDashboard();
   } catch (error) {
     console.error(error);
-    document.getElementById("listaAlertas").innerHTML =
-      `<p class="empty">Erro ao carregar dashboard: ${escapeHtml(error.message)}</p>`;
+    renderEmpty("listaAlertas", `Erro ao carregar dashboard: ${error.message}`);
+    renderEmpty("listaStatus", "Não foi possível carregar.");
+    renderEmpty("listaTipos", "Não foi possível carregar.");
+    renderEmpty("listaManutencoesCriticas", "Não foi possível carregar.");
+    renderEmpty("listaEquipamentos", "Não foi possível carregar.");
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnLogout")?.addEventListener("click", logout);
   document.getElementById("btnAtualizarDashboard")?.addEventListener("click", carregarDashboard);
-  document.getElementById("filtroStatusDashboard")?.addEventListener("change", renderDashboard);
-  document.getElementById("buscaDashboard")?.addEventListener("input", renderDashboard);
+  document.getElementById("filtroStatusDashboard")?.addEventListener("change", carregarDashboard);
+  document.getElementById("buscaDashboard")?.addEventListener("input", carregarDashboard);
 
   carregarDashboard();
 });

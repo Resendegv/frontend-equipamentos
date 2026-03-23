@@ -105,23 +105,31 @@ async function salvarEquipamento(event) {
   const method = id ? "PUT" : "POST";
   const url = id ? `${window.API_URL}/equipamentos/${id}` : `${window.API_URL}/equipamentos/`;
 
-  const response = await fetch(url, {
-    method,
-    headers: authHeaders(),
-    body: JSON.stringify(payload)
-  });
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
 
-  if (!response.ok) {
-    let detail = "Erro ao salvar equipamento.";
-    try {
-      const data = await response.json();
-      detail = data.detail || detail;
-    } catch (_) {}
-    throw new Error(detail);
+    if (!response.ok) {
+      let detail = "Erro ao salvar equipamento.";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch (_) {}
+      throw new Error(detail);
+    }
+
+    closeModal();
+    await carregarPagina();
+  } catch (error) {
+    console.error("Erro ao salvar equipamento:", error);
+    if (error instanceof TypeError) {
+      throw new Error("Falha de conexão com a API. Verifique se o backend está online e se o CORS está liberado.");
+    }
+    throw error;
   }
-
-  closeModal();
-  await carregarPagina();
 }
 
 async function editarEquipamento(id) {
@@ -134,22 +142,27 @@ async function excluirEquipamento(id) {
   const confirmar = confirm("Deseja realmente excluir este equipamento?");
   if (!confirmar) return;
 
-  const response = await fetch(`${window.API_URL}/equipamentos/${id}`, {
-    method: "DELETE",
-    headers: authHeaders()
-  });
+  try {
+    const response = await fetch(`${window.API_URL}/equipamentos/${id}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
 
-  if (!response.ok) {
-    let detail = "Erro ao excluir equipamento.";
-    try {
-      const data = await response.json();
-      detail = data.detail || detail;
-    } catch (_) {}
-    alert(detail);
-    return;
+    if (!response.ok) {
+      let detail = "Erro ao excluir equipamento.";
+      try {
+        const data = await response.json();
+        detail = data.detail || detail;
+      } catch (_) {}
+      alert(detail);
+      return;
+    }
+
+    await carregarPagina();
+  } catch (error) {
+    console.error("Erro ao excluir equipamento:", error);
+    alert("Falha de conexão com a API ao excluir equipamento.");
   }
-
-  await carregarPagina();
 }
 
 async function carregarPagina() {
