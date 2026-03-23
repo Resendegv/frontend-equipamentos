@@ -66,11 +66,43 @@ function getDashboardFilters() {
   };
 }
 
+function getManutencoesDoEquipamento(equipamentoId, manutencoes) {
+  return manutencoes.filter((man) => Number(man.equipamento_id) === Number(equipamentoId));
+}
+
+function equipamentoTemManutencaoEmAndamento(equipamentoId, manutencoes) {
+  return getManutencoesDoEquipamento(equipamentoId, manutencoes).some(
+    (man) => normalizeText(man.status) === "em andamento"
+  );
+}
+
+function getStatusExibicaoEquipamento(eq, manutencoes) {
+  if (equipamentoTemManutencaoEmAndamento(eq.id, manutencoes)) {
+    return "em manutenção";
+  }
+
+  const statusOriginal = normalizeText(eq.status);
+
+  if (statusOriginal === "parado") {
+    return "parado";
+  }
+
+  return "operando";
+}
+
+function enrichEquipamentosComStatusDashboard(equipamentos, manutencoes) {
+  return equipamentos.map((eq) => ({
+    ...eq,
+    status_dashboard: getStatusExibicaoEquipamento(eq, manutencoes)
+  }));
+}
+
 function filtrarEquipamentos(equipamentos) {
   const { status, busca } = getDashboardFilters();
 
   return equipamentos.filter((eq) => {
-    const statusOk = !status || normalizeText(eq.status) === normalizeText(status);
+    const statusBase = eq.status_dashboard || eq.status || "";
+    const statusOk = !status || normalizeText(statusBase) === normalizeText(status);
     const textoBase = normalizeText(`${eq.nome || ""} ${eq.modelo || ""} ${eq.fabricante || ""}`);
     const buscaOk = !busca || textoBase.includes(busca);
     return statusOk && buscaOk;
@@ -79,9 +111,15 @@ function filtrarEquipamentos(equipamentos) {
 
 function computeResumo(equipamentosFiltrados, manutencoes) {
   const total = equipamentosFiltrados.length;
-  const operando = equipamentosFiltrados.filter(eq => normalizeText(eq.status) === "operando").length;
-  const manutencao = equipamentosFiltrados.filter(eq => normalizeText(eq.status) === "em manutencao").length;
-  const parado = equipamentosFiltrados.filter(eq => normalizeText(eq.status) === "parado").length;
+  const operando = equipamentosFiltrados.filter(
+    (eq) => normalizeText(eq.status_dashboard) === "operando"
+  ).length;
+  const manutencao = equipamentosFiltrados.filter(
+    (eq) => normalizeText(eq.status_dashboard) === "em manutencao"
+  ).length;
+  const parado = equipamentosFiltrados.filter(
+    (eq) => normalizeText(eq.status_dashboard) === "parado"
+  ).length;
 
   let noPrazo = 0;
   let vencendo = 0;
@@ -127,7 +165,7 @@ function renderAlertas(equipamentos, manutencoes) {
   const alertas = [];
 
   equipamentos.forEach((eq) => {
-    const status = normalizeText(eq.status);
+    const status = normalizeText(eq.status_dashboard || eq.status);
 
     if (status === "parado") {
       alertas.push({ tipo: "danger", texto: `${eq.nome} está parado.` });
@@ -173,9 +211,15 @@ function renderStatusSummary(equipamentos) {
   const container = document.getElementById("listaStatus");
   if (!container) return;
 
-  const operando = equipamentos.filter(eq => normalizeText(eq.status) === "operando").length;
-  const manutencao = equipamentos.filter(eq => normalizeText(eq.status) === "em manutencao").length;
-  const parado = equipamentos.filter(eq => normalizeText(eq.status) === "parado").length;
+  const operando = equipamentos.filter(
+    (eq) => normalizeText(eq.status_dashboard) === "operando"
+  ).length;
+  const manutencao = equipamentos.filter(
+    (eq) => normalizeText(eq.status_dashboard) === "em manutencao"
+  ).length;
+  const parado = equipamentos.filter(
+    (eq) => normalizeText(eq.status_dashboard) === "parado"
+  ).length;
 
   container.innerHTML = `
     <div class="list-item neutral"><strong>Operando:</strong> ${operando}</div>
@@ -209,9 +253,15 @@ function renderGraficoStatus(equipamentos) {
   if (!container) return;
 
   const map = {
-    Operando: equipamentos.filter(eq => normalizeText(eq.status) === "operando").length,
-    "Em manutenção": equipamentos.filter(eq => normalizeText(eq.status) === "em manutencao").length,
-    Parado: equipamentos.filter(eq => normalizeText(eq.status) === "parado").length
+    Operando: equipamentos.filter(
+      (eq) => normalizeText(eq.status_dashboard) === "operando"
+    ).length,
+    "Em manutenção": equipamentos.filter(
+      (eq) => normalizeText(eq.status_dashboard) === "em manutencao"
+    ).length,
+    Parado: equipamentos.filter(
+      (eq) => normalizeText(eq.status_dashboard) === "parado"
+    ).length
   };
 
   container.innerHTML = buildBars(map);
@@ -299,15 +349,22 @@ function renderEquipamentosList(equipamentos) {
       <span>Fabricante: ${escapeHtml(eq.fabricante || "-")}</span> |
       <span>Modelo: ${escapeHtml(eq.modelo || "-")}</span> |
       <span>Ano: ${escapeHtml(eq.ano || "-")}</span> |
-      <span>Status: ${escapeHtml(eq.status || "-")}</span>
+      <span>Status: ${escapeHtml(eq.status_dashboard || eq.status || "-")}</span>
     </div>
   `).join("");
 }
 
 function renderDashboard() {
-  const equipamentosFiltrados = filtrarEquipamentos(equipamentosBase);
+  const equipamentosComStatus = enrichEquipamentosComStatusDashboard(
+    equipamentosBase,
+    manutencoesBase
+  );
+
+  const equipamentosFiltrados = filtrarEquipamentos(equipamentosComStatus);
   const ids = new Set(equipamentosFiltrados.map((eq) => Number(eq.id)));
-  const manutencoesRelacionadas = manutencoesBase.filter((man) => ids.has(Number(man.equipamento_id)));
+  const manutencoesRelacionadas = manutencoesBase.filter((man) =>
+    ids.has(Number(man.equipamento_id))
+  );
 
   const resumo = computeResumo(equipamentosFiltrados, manutencoesRelacionadas);
 
