@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalhe do Equipamento</title>
+  <link rel="stylesheet" href="./app.css?v=22" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">FleetControl</div>
+
+      <nav class="nav">
+        <a class="nav-link" href="./dashboard.html">Dashboard</a>
+        <a class="nav-link active" href="./equipamentos.html">Equipamentos</a>
+        <a class="nav-link" href="./manutencoes.html">Manutenções</a>
+      </nav>
+
+      <button id="btnLogout" class="btn btn-danger full">Sair</button>
+    </aside>
+
+    <main class="content">
+      <header class="page-header with-actions">
+        <div>
+          <h1 id="tituloEquipamento">Equipamento</h1>
+          <p class="muted">Detalhes e histórico de manutenções</p>
+        </div>
+
+        <button id="btnVoltarEquipamentos" class="btn btn-secondary">Voltar</button>
+      </header>
+
+      <section class="panel">
+        <div class="table-wrap">
+          <table class="table">
+            <tbody>
+              <tr>
+                <th style="width: 220px;">Nome</th>
+                <td id="detalheNome">-</td>
+              </tr>
+              <tr>
+                <th>Fabricante</th>
+                <td id="detalheFabricante">-</td>
+              </tr>
+              <tr>
+                <th>Modelo</th>
+                <td id="detalheModelo">-</td>
+              </tr>
+              <tr>
+                <th>Ano</th>
+                <td id="detalheAno">-</td>
+              </tr>
+              <tr>
+                <th>Status</th>
+                <td id="detalheStatus">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header class="page-header">
+          <div>
+            <h2 style="font-size: 28px; margin-bottom: 6px;">Histórico de manutenções</h2>
+            <p class="muted">Manutenções vinculadas a este equipamento</p>
+          </div>
+        </header>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Prevista</th>
+                <th>Concluída</th>
+                <th>Status</th>
+                <th>Prioridade</th>
+                <th>Status do prazo</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaHistoricoManutencoes"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./config.js?v=22"></script>
+  <script src="./common.js?v=22"></script>
+  <script src="./equipamento-detalhe.js?v=22"></script>
+</body>
+</html>

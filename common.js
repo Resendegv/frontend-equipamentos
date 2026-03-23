@@ -55,6 +55,10 @@ function parseApiList(data) {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data.dados)) return data.dados;
   if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.resultados)) return data.resultados;
+  if (Array.isArray(data.registros)) return data.registros;
+  if (Array.isArray(data.rows)) return data.rows;
+  if (Array.isArray(data.lista)) return data.lista;
   return [];
 }
 

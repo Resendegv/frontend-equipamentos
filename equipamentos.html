@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Equipamentos</title>
-  <link rel="stylesheet" href="./app.css?v=10" />
+  <link rel="stylesheet" href="./app.css?v=22" />
 </head>
 <body>
   <div class="layout">
@@ -62,7 +62,6 @@
                 <th>Modelo</th>
                 <th>Ano</th>
                 <th>Status</th>
-                <th>Próxima manutenção</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -112,11 +111,6 @@
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="proxima_manutencao">Próxima manutenção</label>
-          <input type="date" id="proxima_manutencao" />
-        </div>
-
         <div class="form-actions">
           <button type="button" id="btnCancelarEquipamento" class="btn btn-secondary">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar</button>
@@ -125,6 +119,8 @@
     </div>
   </div>
 
-  <script src="./equipamentos.js?v=11"></script>
+  <script src="./config.js?v=22"></script>
+  <script src="./common.js?v=22"></script>
+  <script src="./equipamentos.js?v=22"></script>
 </body>
 </html>

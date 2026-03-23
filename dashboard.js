@@ -249,7 +249,7 @@ function renderManutencoesCriticas(manutencoes) {
       <div class="list-item danger">
         <strong>${escapeHtml(nomeEquipamento)}</strong><br>
         <span>${escapeHtml(man.titulo || "Sem título")}</span><br>
-        <span>Tipo: ${escapeHtml(man.tipo || "-")}</span><br>
+        <span>Prioridade: ${escapeHtml(man.prioridade || "-")}</span><br>
         <span>Prevista: ${formatDateBR(man.data_prevista)}</span><br>
         <span>Status: ${escapeHtml(man.status_prazo || "-")}</span>
       </div>

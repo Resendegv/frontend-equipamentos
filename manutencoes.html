@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Manutenções</title>
-  <link rel="stylesheet" href="./app.css?v=10" />
+  <link rel="stylesheet" href="./app.css?v=21" />
 </head>
 <body>
   <div class="layout">
@@ -37,7 +37,7 @@
             <option value="">Todos</option>
             <option value="pendente">Pendente</option>
             <option value="agendada">Agendada</option>
-            <option value="concluída">Concluída</option>
+            <option value="concluida">Concluída</option>
           </select>
         </div>
 
@@ -46,9 +46,9 @@
           <select id="filtroPrioridadeManutencao">
             <option value="">Todas</option>
             <option value="baixa">Baixa</option>
-            <option value="média">Média</option>
+            <option value="media">Média</option>
             <option value="alta">Alta</option>
-            <option value="crítica">Crítica</option>
+            <option value="critica">Crítica</option>
           </select>
         </div>
 
@@ -64,9 +64,10 @@
               <tr>
                 <th>ID</th>
                 <th>Equipamento</th>
+                <th>Título</th>
                 <th>Descrição</th>
                 <th>Prevista</th>
-                <th>Realizada</th>
+                <th>Concluída</th>
                 <th>Status</th>
                 <th>Prioridade</th>
                 <th>Ações</th>
@@ -83,7 +84,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h2 id="tituloModalManutencao">Nova manutenção</h2>
-        <button id="btnFecharModalManutencao" class="btn-icon">×</button>
+        <button id="btnFecharModalManutencao" class="btn-icon" type="button">×</button>
       </div>
 
       <form id="formManutencao" class="form-grid">
@@ -95,8 +96,13 @@
         </div>
 
         <div class="form-group">
+          <label for="titulo">Título</label>
+          <input type="text" id="titulo" required />
+        </div>
+
+        <div class="form-group">
           <label for="descricao">Descrição</label>
-          <input type="text" id="descricao" required />
+          <input type="text" id="descricao" />
         </div>
 
         <div class="form-group">
@@ -105,8 +111,8 @@
         </div>
 
         <div class="form-group">
-          <label for="data_realizada">Data realizada</label>
-          <input type="date" id="data_realizada" />
+          <label for="data_conclusao">Data conclusão</label>
+          <input type="date" id="data_conclusao" />
         </div>
 
         <div class="form-group">
@@ -114,7 +120,7 @@
           <select id="statusManutencao" required>
             <option value="pendente">Pendente</option>
             <option value="agendada">Agendada</option>
-            <option value="concluída">Concluída</option>
+            <option value="concluida">Concluída</option>
           </select>
         </div>
 
@@ -122,9 +128,9 @@
           <label for="prioridade">Prioridade</label>
           <select id="prioridade" required>
             <option value="baixa">Baixa</option>
-            <option value="média">Média</option>
+            <option value="media">Média</option>
             <option value="alta">Alta</option>
-            <option value="crítica">Crítica</option>
+            <option value="critica">Crítica</option>
           </select>
         </div>
 
@@ -136,6 +142,8 @@
     </div>
   </div>
 
-  <script src="./manutencoes.js?v=13"></script>
+  <script src="./config.js?v=21"></script>
+  <script src="./common.js?v=21"></script>
+  <script src="./manutencoes.js?v=21"></script>
 </body>
 </html>
