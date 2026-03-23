@@ -13,7 +13,10 @@ function openModal(editing = false, item = null) {
   document.getElementById("fabricante").value = item?.fabricante || "";
   document.getElementById("modelo").value = item?.modelo || "";
   document.getElementById("ano").value = item?.ano || "";
-  document.getElementById("status").value = item?.status || "operando";
+
+  const statusAtual = normalizeText(item?.status || "operando");
+  const statusFormulario = statusAtual === "parado" ? "parado" : "operando";
+  document.getElementById("status").value = statusFormulario;
 
   modal.classList.remove("hidden");
 }
